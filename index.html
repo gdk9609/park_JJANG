@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 예약 주차</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1455e6;
+            --primary-dark: #06245f;
+            --bg-color: #e5e7eb;
+            --screen-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --border-color: #e5e7eb;
+            --card-bg: #f9fafb;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --admin-color: #111827;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-color); display: flex; justify-content: center; min-height: 100vh; }
+        .app-container { width: 100%; max-width: 480px; min-height: 100vh; height: 100vh; background: var(--screen-bg); box-shadow: 0 0 22px rgba(0,0,0,0.12); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .header { height: 57px; display: flex; align-items: center; justify-content: center; font-weight: 800; border-bottom: 1px solid var(--border-color); background: #fff; flex-shrink: 0; z-index: 10; }
+        .header .back-btn { position: absolute; left: 18px; cursor: pointer; font-size: 18px; padding: 6px; color: var(--text-main); }
+        .main-area { flex: 1; position: relative; overflow: hidden; }
+        .page { display: none; flex-direction: column; width: 100%; height: 100%; position: relative; background: var(--screen-bg); overflow: hidden; }
+        .page.active { display: flex; animation: fadeSlideIn .22s ease forwards; }
+        .page:not(#page-home)::before { content: ""; position: absolute; inset: 0; background-image: url('logo.png'); background-repeat: no-repeat; background-position: center 47%; background-size: min(76%, 350px) auto; opacity:.2; pointer-events: none; z-index: 0; }
+        .content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 88px; scrollbar-width: none; position: relative; z-index: 1; }
+        .content::-webkit-scrollbar { display: none; }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+        .bottom-nav { display: flex; justify-content: space-around; padding: 10px 0 22px; background: #fff; border-top: 1px solid var(--border-color); flex-shrink: 0; z-index: 10; }
+        .nav-item { width: 25%; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--text-sub); cursor: pointer; }
+        .nav-item i { font-size: 20px; }
+        .nav-item.active { color: var(--primary-color); font-weight: 700; }
+        .blue-card { background: linear-gradient(135deg, var(--primary-color), #0b3fa8); color: #fff; border-radius: 20px; padding: 28px 20px; text-align: center; margin: 10px 0 20px; box-shadow: 0 14px 32px rgba(20,85,230,.25); }
+        .home-logo { width: 100%; max-width: 350px; height: auto; margin: 0 auto 12px; display: block; background: rgba(255,255,255,.94); border-radius: 18px; padding: 12px; }
+        .section-title { font-size: 14px; font-weight: 800; color: var(--text-main); margin: 18px 0 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .card { border: 1px solid var(--border-color); border-radius: 14px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; background: #fff; cursor: pointer; transition: .18s; }
+        .card:active { background: var(--card-bg); transform: scale(.99); }
+        .card-icon { width: 42px; height: 42px; border-radius: 12px; background: #eff6ff; color: var(--primary-color); display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 18px; flex-shrink: 0; }
+        .card-text { flex: 1; }
+        .card-text h4 { font-size: 15px; color: var(--text-main); margin-bottom: 4px; }
+        .card-text p { font-size: 12px; color: var(--text-sub); line-height: 1.4; }
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 800; margin-bottom: 8px; color: var(--text-main); }
+        .req { color: var(--danger-color); margin-left: 2px; }
+        .input-field { width: 100%; padding: 13px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 14px; outline: none; background: #fff; }
+        .input-field:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(20,85,230,.08); }
+        select.input-field { appearance: none; background: #fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236b7280" viewBox="0 0 16 16"><path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>') no-repeat right 14px center; background-size: 12px; padding-right: 34px; }
+        .notice-text { font-size: 12px; line-height: 1.55; background: #eff6ff; color: var(--text-main); border-radius: 12px; padding: 13px; margin-bottom: 16px; }
+        .danger-note { background: #fef2f2; color: #991b1b; }
+        .muted { color: var(--text-sub); font-size: 12px; line-height: 1.45; }
+        .btn-primary, .btn-outline, .btn-danger, .btn-refresh { width: 100%; border: none; border-radius: 10px; padding: 14px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: var(--primary-color); color: #fff; }
+        .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+        .btn-outline { background: #fff; color: var(--text-main); border: 1px solid var(--border-color); margin-top: 8px; }
+        .btn-danger { background: var(--danger-color); color: white; }
+        .btn-refresh { width: auto; padding: 8px 10px; font-size: 12px; background: #fff; color: var(--primary-color); border: 1px solid #bfdbfe; }
+        .button-row { display: flex; gap: 8px; margin-top: 14px; }
+        .button-row > button { flex: 1; margin-top: 0; }
+        .info-card, .result-box, .admin-section-card { background: #fff; border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+        .result-box { box-shadow: 0 8px 20px rgba(0,0,0,.04); }
+        .info-row { display: flex; justify-content: space-between; gap: 14px; font-size: 13px; color: var(--text-sub); margin-bottom: 12px; align-items: flex-start; }
+        .info-row:last-child { margin-bottom: 0; }
+        .info-row strong { color: var(--text-main); font-weight: 800; text-align: right; word-break: break-word; }
+        .big-code { text-align: center; padding: 18px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 16px; margin-bottom: 16px; }
+        .big-code span { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; }
+        .big-code strong { color: var(--primary-color); font-size: 32px; letter-spacing: 2px; }
+        .success-circle { width: 68px; height: 68px; border-radius: 50%; background: var(--success-color); color: #fff; display: flex; align-items: center; justify-content: center; margin: 22px auto 14px; font-size: 34px; }
+        hr { border: 0; border-top: 1px solid var(--border-color); margin: 14px 0; }
+        .tower-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+        .tower-tab { flex: 1; padding: 11px; border: 1px solid var(--border-color); border-radius: 10px; background: #fff; color: var(--text-sub); font-weight: 800; cursor: pointer; }
+        .tower-tab.active { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+        .tower-info-content { display: none; }
+        .tower-info-content.active { display: block; }
+        .status-pill, .admin-status-pill { font-size: 11px; font-weight: 900; padding: 5px 9px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; }
+        .good { background: #dcfce7; color: #166534; }
+        .normal { background: #fef3c7; color: #92400e; }
+        .busy, .full { background: #fee2e2; color: #991b1b; }
+        .admin-hero { background: linear-gradient(135deg, #111827, #374151); color: #fff; border-radius: 18px; padding: 22px; margin-bottom: 16px; }
+        .admin-hero h2 { font-size: 20px; margin-bottom: 6px; }
+        .admin-hero p { font-size: 12px; opacity: .86; line-height: 1.5; }
+        .admin-summary-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 16px; }
+        .admin-mini-stat { background: #fff; border: 1px solid var(--border-color); border-radius: 14px; padding: 13px 8px; text-align: center; }
+        .admin-mini-stat span { display: block; font-size: 11px; color: var(--text-sub); margin-bottom: 5px; }
+        .admin-mini-stat strong { color: var(--text-main); font-size: 16px; }
+        .admin-tower-card { background: #fff; border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 12px; cursor: pointer; }
+        .admin-tower-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 12px; }
+        .admin-tower-title { display: flex; gap: 10px; align-items: center; }
+        .admin-tower-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #eff6ff; color: var(--primary-color); }
+        .admin-card-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding-top: 12px; border-top: 1px dashed var(--border-color); }
+        .admin-card-stats div { text-align: center; }
+        .admin-card-stats span { font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px; }
+        .admin-card-stats strong { font-size: 13px; color: var(--text-main); }
+        .admin-total-sales-box { background: linear-gradient(135deg, #ecfdf5, #ffffff); border: 1px solid #a7f3d0; border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+        .admin-total-sales-box p { font-size: 12px; color: var(--text-sub); margin-bottom: 6px; }
+        .admin-total-sales-box strong { display: block; font-size: 26px; color: var(--success-color); }
+        .admin-detail-top { background: linear-gradient(135deg, var(--primary-color), #0b3fa8); color: #fff; border-radius: 18px; padding: 20px; margin-bottom: 14px; }
+        .admin-table-wrapper { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 10px; }
+        .admin-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 12px; }
+        .admin-table th, .admin-table td { padding: 10px; border-bottom: 1px solid var(--border-color); text-align: left; white-space: nowrap; }
+        .admin-table th { background: var(--card-bg); color: var(--text-main); font-weight: 800; }
+        .admin-table tr:last-child td { border-bottom: 0; }
+        .admin-action-btn { border: 0; border-radius: 8px; padding: 7px 9px; font-size: 11px; font-weight: 800; background: var(--primary-color); color: #fff; cursor: pointer; }
+        .admin-empty-row { text-align: center !important; color: var(--text-sub); padding: 18px !important; }
+        .modal-overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.48); z-index: 1000; padding: 18px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { width: 100%; max-width: 420px; max-height: 86vh; overflow-y: auto; background: #fff; border-radius: 18px; padding: 20px; position: relative; }
+        .modal-close { position: absolute; top: 14px; right: 16px; color: var(--text-sub); cursor: pointer; font-size: 20px; }
+        .time-grid {display: flex; gap: 10px; width: 100%;}
+        .time-grid .small-select {flex: 1;}
+        .small-select { max-height: 150px; overflow-y: auto; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .calc-total { font-size: 30px; font-weight: 900; color: var(--primary-color); text-align: center; margin: 8px 0 14px; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="header" id="global-header">
+        <i class="fas fa-chevron-left back-btn" id="global-back-btn" style="display:none"></i>
+        <span id="global-header-title">무인 주차 시스템</span>
+    </div>
+
+    <div class="main-area">
+        <div id="page-home" class="page active">
+            <div class="content">
+                <div class="blue-card">
+                    <img class="home-logo" src="logo.png" alt="스마트 주차장 로고">
+                    <h2 style="font-size:24px; margin-bottom:7px;">스마트 예약 주차</h2>
+                    <p style="font-size:13px; opacity:.9;">예약부터 입차, 정산까지 한 번에 처리하세요.</p>
+                </div>
+                <div class="section-title">메인 메뉴</div>
+                <div class="card" onclick="goToPage('page-use-menu')"><div class="card-icon"><i class="fas fa-car-side"></i></div><div class="card-text"><h4>주차장 이용</h4><p>예약 및 입차 처리</p></div><i class="fas fa-chevron-right" style="color:#cbd5e1"></i></div>
+                <div class="card" onclick="goToPage('page-search')"><div class="card-icon" style="color:#f59e0b;background:#fef3c7"><i class="fas fa-search"></i></div><div class="card-text"><h4>조회 및 변경</h4><p>예약/입차 상태 확인, 예약 변경·취소</p></div><i class="fas fa-chevron-right" style="color:#cbd5e1"></i></div>
+                <div class="card" onclick="goToPage('page-settle-main')"><div class="card-icon" style="color:#8b5cf6;background:#f5f3ff"><i class="fas fa-credit-card"></i></div><div class="card-text"><h4>출차 및 정산</h4><p>현재 요금 확인 후 결제 처리</p></div><i class="fas fa-chevron-right" style="color:#cbd5e1"></i></div>
+                <div class="card" onclick="goToPage('page-info')"><div class="card-icon" style="color:#10b981;background:#ecfdf5"><i class="fas fa-info-circle"></i></div><div class="card-text"><h4>정보 확인</h4><p>타워별 입차+예약 현황 조회</p></div><i class="fas fa-chevron-right" style="color:#cbd5e1"></i></div>
+            </div>
+        </div>
+
+        <div id="page-use-menu" class="page"><div class="content">
+            <p class="muted" style="margin:8px 0 18px;">원하시는 서비스를 선택해주세요.</p>
+            <div class="card" onclick="goToPage('page-reserve')"><div class="card-icon"><i class="far fa-calendar-check"></i></div><div class="card-text"><h4>예약하기</h4><p>차종별 잔여 대수를 확인하고 예약합니다.</p></div><i class="fas fa-chevron-right" style="color:#cbd5e1"></i></div>
+            <div class="card" onclick="goToPage('page-entry')"><div class="card-icon" style="color:#111827;background:#f3f4f6"><i class="fas fa-sign-in-alt"></i></div><div class="card-text"><h4>입차하기</h4><p>예약번호와 차량번호로 입차 처리합니다.</p></div><i class="fas fa-chevron-right" style="color:#cbd5e1"></i></div>
+        </div></div>
+
+        <div id="page-reserve" class="page"><div class="content">
+            <div class="notice-text danger-note"><i class="fas fa-exclamation-circle"></i> 예약 후 <strong>20분 이내</strong> 입차하지 않으면 자동 취소됩니다. 예약 보증금은 정상 정산 시 차감됩니다.</div>
+            <form id="reserve-form" onsubmit="submitReserve(event)">
+                <div class="input-group"><label>차량번호<span class="req">*</span></label><input id="reserve-car-number" class="input-field" placeholder="예: 12가3456" autocomplete="off" required></div>
+                <div class="input-group"><label>전화번호<span class="req">*</span></label><input id="reserve-phone" class="input-field" placeholder="010-0000-0000" autocomplete="off" required></div>
+                <div class="input-group"><label>차종 선택<span class="req">*</span></label><select id="reserve-car-type" class="input-field" required onchange="refreshReserveTowerOptions()"><option value="" disabled selected>차종을 선택하세요</option><option value="1">경차</option><option value="2">중형차</option><option value="3">SUV</option><option value="4">대형차</option><option value="5">전기차</option></select></div>
+                <div class="input-group"><label>주차타워 선택<span class="req">*</span></label><select id="reserve-tower" class="input-field" required><option value="" disabled selected>차종을 먼저 선택하세요</option></select><p id="reserve-availability-note" class="muted" style="margin-top:8px;"></p></div>
+                <button class="btn-primary" type="submit"><i class="far fa-calendar-check"></i> 예약 완료하기</button>
+            </form>
+        </div></div>
+
+        <div id="page-reservation-complete" class="page"><div class="content" style="text-align:center;">
+            <div class="success-circle"><i class="fas fa-check"></i></div><h2 style="font-size:22px;margin-bottom:6px;">예약이 완료되었습니다</h2><p class="muted" style="margin-bottom:18px;">예약 정보가 카카오톡 SMS로 발송되었습니다.</p>
+            <div class="big-code"><span>예약번호</span><strong id="complete-code-big">-</strong></div>
+            <div class="info-card" style="text-align:left;" id="complete-info"></div>
+            <button class="btn-primary" onclick="goToPage('page-entry')"><i class="fas fa-sign-in-alt"></i> 입차하러 가기</button><button class="btn-outline" onclick="goToPage('page-home')">홈으로 돌아가기</button>
+        </div></div>
+
+        <div id="page-entry" class="page"><div class="content">
+            <div class="notice-text">입차는 예약 완료 후 발급된 <strong>예약번호</strong>와 차량번호가 있어야 가능합니다.</div>
+            <form id="entry-form" onsubmit="submitEntry(event)">
+                <div class="input-group"><label>예약번호<span class="req">*</span></label><input id="entry-code" class="input-field" placeholder="예: aB123" autocomplete="off" required></div>
+                <div class="input-group"><label>차량번호<span class="req">*</span></label><input id="entry-car-number" class="input-field" placeholder="예: 12가3456" autocomplete="off" required></div>
+                <button class="btn-primary" type="submit"><i class="fas fa-sign-in-alt"></i> 입차 처리</button>
+            </form>
+        </div></div>
+
+        <div id="page-entry-complete" class="page"><div class="content" style="text-align:center;">
+            <div class="success-circle"><i class="fas fa-parking"></i></div><h2 style="font-size:22px;margin-bottom:6px;">입차가 완료되었습니다</h2><p class="muted" style="margin-bottom:18px;">예약 내역은 입차 현황으로 이동되었습니다.</p>
+            <div class="info-card" style="text-align:left;" id="entry-complete-info"></div>
+            <button class="btn-primary" onclick="goToPage('page-search')"><i class="fas fa-search"></i> 입차 조회하기</button><button class="btn-outline" onclick="goToPage('page-home')">홈으로 돌아가기</button>
+        </div></div>
+
+        <div id="page-search" class="page"><div class="content">
+            <p class="muted" style="margin:8px 0 18px;">예약번호를 입력하여 예약 또는 입차 상태를 조회하세요.</p>
+            <form id="search-form" onsubmit="handleSearch(event)">
+                <div class="input-group"><label>예약번호<span class="req">*</span></label><input id="search-input" class="input-field" placeholder="예약번호 입력" autocomplete="off" required></div>
+                <button id="btn-search-exec" class="btn-primary" type="submit"><i class="fas fa-search"></i> 조회하기</button>
+                <div style="text-align:center;margin-top:16px;"><a href="#" onclick="goToPage('page-find-res'); return false;" style="font-size:13px;color:var(--primary-color);">예약번호를 잊으셨나요?</a></div>
+            </form>
+        </div></div>
+
+        <div id="page-reservation-detail" class="page"><div class="content">
+            <div class="section-title" style="margin-top:0;">조회 결과 <button class="btn-refresh" onclick="refreshCurrentStatus()"><i class="fas fa-rotate-right"></i> 새로고침</button></div>
+            <div id="status-detail-area"></div>
+        </div></div>
+
+        <div id="page-reservation-change" class="page"><div class="content">
+            <div class="notice-text">예약 변경은 <strong>차종과 주차타워</strong>만 변경할 수 있습니다. 만차인 타워는 선택할 수 없습니다.</div>
+            <form id="change-form" onsubmit="submitReservationChange(event)">
+                <div class="input-group"><label>예약번호</label><input id="change-code" class="input-field" readonly></div>
+                <div class="input-group"><label>차종 선택<span class="req">*</span></label><select id="change-car-type" class="input-field" required onchange="refreshChangeTowerOptions()"><option value="1">경차</option><option value="2">중형차</option><option value="3">SUV</option><option value="4">대형차</option><option value="5">전기차</option></select></div>
+                <div class="input-group"><label>주차타워 선택<span class="req">*</span></label><select id="change-tower" class="input-field" required></select><p id="change-availability-note" class="muted" style="margin-top:8px;"></p></div>
+                <button class="btn-primary" type="submit"><i class="fas fa-pen"></i> 예약 변경 완료</button><button type="button" class="btn-outline" onclick="goToPage('page-reservation-detail')">돌아가기</button>
+            </form>
+        </div></div>
+
+        <div id="page-find-res" class="page"><div class="content">
+            <p class="muted" style="margin:8px 0 18px;">차량번호와 전화번호로 예약번호를 찾습니다.</p>
+            <form id="find-form" onsubmit="handleFindRes(event)">
+                <div class="input-group"><label>차량번호<span class="req">*</span></label><input id="find-car" class="input-field" placeholder="예: 12가3456" autocomplete="off" required></div>
+                <div class="input-group"><label>전화번호<span class="req">*</span></label><input id="find-phone" class="input-field" placeholder="010-0000-0000" autocomplete="off" required></div>
+                <button id="btn-find-exec" class="btn-primary" type="submit"><i class="fas fa-search"></i> 예약번호 찾기</button>
+            </form>
+            <div id="result-find-res" style="margin-top:18px;"></div>
+        </div></div>
+
+        <div id="page-calculator" class="page"><div class="content">
+            <div class="notice-text"><strong>요금 기준</strong><br>기본 1시간 2,000원 / 추가 10분당 300원<br>1일 최대 요금은 적용하지 않습니다.</div>
+            <form id="calc-form" onsubmit="handleCalculate(event)">
+                <div class="input-group"><label>예상 입차 일시<span class="req">*</span></label>
+                    <input type="date" id="calc-entry-date" class="input-field" required><div class="time-grid" style="margin-top:8px;"><select id="calc-entry-hour" class="input-field small-select" required></select><select id="calc-entry-min" class="input-field small-select" required></select></div></div>
+                <div class="input-group"><label>예상 출차 일시<span class="req">*</span></label>
+                    <input type="date" id="calc-exit-date" class="input-field" required><div class="time-grid" style="margin-top:8px;"><select id="calc-exit-hour" class="input-field small-select" required></select><select id="calc-exit-min" class="input-field small-select" required></select></div></div>
+                <button id="btn-calc-exec" class="btn-primary" type="submit"><i class="fas fa-calculator"></i> 예상 요금 확인</button>
+            </form>
+            <div id="result-calc" style="margin-top:18px;"></div>
+        </div></div>
+
+        <div id="page-settle-main" class="page"><div class="content">
+            <p class="muted" style="margin:8px 0 18px;">정산을 위해 예약번호를 입력해주세요.</p>
+            <form id="settle-form" onsubmit="searchParkingFee(event)"><div class="input-group"><label>예약번호<span class="req">*</span></label><input id="settle-code" class="input-field" placeholder="예약번호 입력" autocomplete="off" required></div><button class="btn-primary" type="submit"><i class="fas fa-credit-card"></i> 주차 요금 확인</button></form>
+        </div></div>
+
+        <div id="page-settle-detail" class="page"><div class="content">
+            <div class="info-card"><h3 style="text-align:center;margin-bottom:16px;">주차 요금 정산</h3><div id="settle-detail-info"></div></div>
+            <div class="input-group"><label>출차 결제 수단 선택</label><select id="pay-method" class="input-field"><option>신용/체크카드</option><option>현금결제</option><option>모바일 간편결제</option></select></div>
+            <button class="btn-primary" onclick="completePayment()"><i class="fas fa-check"></i> 결제 진행하기</button>
+        </div></div>
+
+        <div id="page-receipt" class="page"><div class="content" style="text-align:center;">
+            <div class="success-circle"><i class="fas fa-check"></i></div><h2 style="font-size:22px;margin-bottom:6px;">결제 완료 및 출차 처리</h2><p class="muted" style="margin-bottom:18px;">전자영수증이 카카오톡 SMS로 발송되었습니다.</p><div class="info-card" style="text-align:left;" id="receipt-info"></div><button class="btn-outline" onclick="goToPage('page-home')">홈으로 돌아가기</button>
+        </div></div>
+
+        <div id="page-info" class="page"><div class="content">
+            <div class="section-title" style="margin-top:0;">주차 타워 정보 <button class="btn-refresh" onclick="renderTowerOverview()"><i class="fas fa-rotate-right"></i> 새로고침</button></div>
+            <div class="tower-tabs"><button class="tower-tab active" onclick="showTowerInfo('A', this)">A Tower</button><button class="tower-tab" onclick="showTowerInfo('B', this)">B Tower</button><button class="tower-tab" onclick="showTowerInfo('C', this)">C Tower</button></div>
+            <div id="tower-info-A" class="tower-info-content active"></div><div id="tower-info-B" class="tower-info-content"></div><div id="tower-info-C" class="tower-info-content"></div>
+        </div></div>
+
+        <div id="page-admin" class="page"><div class="content">
+            <div class="admin-hero"><h2>시스템 관리자 메뉴</h2><p>주차타워별 예약·입차 현황과 매출을 실시간으로 확인합니다.</p></div>
+            <div class="section-title" style="margin-top:0;">관리자 요약 <button class="btn-refresh" onclick="renderAdminHome()"><i class="fas fa-rotate-right"></i> 새로고침</button></div>
+            <div class="admin-summary-grid"><div class="admin-mini-stat"><span>전체 입차</span><strong id="admin-total-entered">0대</strong></div><div class="admin-mini-stat"><span>전체 예약</span><strong id="admin-total-reserved">0건</strong></div><div class="admin-mini-stat"><span>관리 타워</span><strong>3개</strong></div></div>
+            <div id="admin-tower-list"></div>
+            <div class="section-title">전체 매출 통계</div><div class="admin-total-sales-box"><p>A/B/C Tower 매출 합계</p><strong id="admin-total-sales">₩ 0</strong></div>
+            <button class="btn-outline" onclick="openModal('modal-log')"><i class="fas fa-terminal"></i> 시스템 로그 확인</button>
+        </div></div>
+
+        <div id="page-admin-tower-detail" class="page"><div class="content">
+            <div class="admin-detail-top"><h2 id="admin-detail-title">A Tower</h2><p id="admin-detail-subtitle">타워별 입차·예약 현황 관리</p></div>
+            <div class="section-title" style="margin-top:0;">타워 관리 <button class="btn-refresh" onclick="renderAdminTowerDetail()"><i class="fas fa-rotate-right"></i> 새로고침</button></div>
+            <div class="admin-total-sales-box"><p id="admin-detail-sales-label">해당 타워 매출</p><strong id="admin-detail-sales">₩ 0</strong></div>
+            <div class="admin-section-card"><div class="section-title" style="margin-top:0;"><span><i class="fas fa-car-side" style="color:var(--primary-color)"></i> 입차 현황</span><span id="admin-entered-count" class="muted">0대</span></div><div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>예약번호</th><th>차량번호</th><th>전화번호</th><th>차종</th><th>입차시간</th><th>경과시간</th><th>현재요금</th><th>관리</th></tr></thead><tbody id="admin-entered-list"></tbody></table></div></div>
+            <div class="admin-section-card"><div class="section-title" style="margin-top:0;"><span><i class="far fa-calendar-check" style="color:#f59e0b"></i> 예약 현황</span><span id="admin-reserved-count" class="muted">0건</span></div><div class="admin-table-wrapper"><table class="admin-table"><thead><tr><th>예약번호</th><th>차량번호</th><th>전화번호</th><th>차종</th><th>예약시각</th><th>제한시간</th></tr></thead><tbody id="admin-reserved-list"></tbody></table></div></div>
+            <button class="btn-outline" onclick="goToPage('page-admin')"><i class="fas fa-arrow-left"></i> 관리자 메인으로 돌아가기</button>
+        </div></div>
+    </div>
+
+    <div class="bottom-nav" id="global-bottom-nav"><div class="nav-item active" id="nav-home" onclick="goToPage('page-home')"><i class="fas fa-home"></i>홈</div><div class="nav-item" id="nav-search" onclick="goToPage('page-search')"><i class="fas fa-search"></i>조회</div><div class="nav-item" id="nav-calc" onclick="goToPage('page-calculator')"><i class="fas fa-calculator"></i>계산기</div><div class="nav-item" id="nav-info" onclick="goToPage('page-info')"><i class="fas fa-info-circle"></i>안내</div></div>
+
+    <div class="modal-overlay" id="modal-log"><div class="modal-content" style="background:#111827;color:#22c55e;font-family:monospace;font-size:11px;"><i class="fas fa-times modal-close" style="color:#fff" onclick="closeModal('modal-log')"></i><h3 style="color:#fff;margin-bottom:12px;">system_log.txt</h3><div style="line-height:1.6;">실제 로그는 서버의 data/log.txt에 저장됩니다.<br>Apache CGI 환경에서는 서버 파일에서 확인하세요.</div></div></div>
+
+    <div class="modal-overlay" id="modal-entry-time"><div class="modal-content"><i class="fas fa-times modal-close" onclick="closeModal('modal-entry-time')"></i><h3 style="margin-bottom:14px;">입차시간 수정</h3><p class="muted" id="entry-time-target" style="margin-bottom:14px;"></p><div class="input-group"><label>날짜</label><input id="admin-entry-date" class="input-field" placeholder="yyyy-mm-dd" pattern="\d{4}-\d{2}-\d{2}"></div><div class="time-grid"><select id="admin-entry-hour" class="input-field small-select"></select><select id="admin-entry-min" class="input-field small-select"></select><select id="admin-entry-sec" class="input-field small-select"></select></div><button class="btn-primary" style="margin-top:16px;" onclick="submitEntryTimeEdit()"><i class="fas fa-check"></i> 수정 완료</button></div></div>
+</div>
+
+<script>
+const API_URL = '/cgi-bin/parking_api.cgi';
+const pageConfig = {
+    'page-home': { title: '무인 주차 시스템', back: null, nav: 'nav-home' },
+    'page-use-menu': { title: '주차장 이용', back: 'page-home', nav: 'nav-home' },
+    'page-reserve': { title: '주차 타워 예약', back: 'page-use-menu', nav: 'nav-home' },
+    'page-reservation-complete': { title: '예약 완료', back: null, nav: 'nav-home' },
+    'page-entry': { title: '입차 처리', back: 'page-use-menu', nav: 'nav-home' },
+    'page-entry-complete': { title: '입차 완료', back: null, nav: 'nav-home' },
+    'page-search': { title: '조회 및 변경', back: 'page-home', nav: 'nav-search' },
+    'page-reservation-detail': { title: '상세 조회', back: 'page-search', nav: 'nav-search' },
+    'page-reservation-change': { title: '예약 변경', back: 'page-reservation-detail', nav: 'nav-search' },
+    'page-find-res': { title: '예약번호 찾기', back: 'page-search', nav: 'nav-search' },
+    'page-calculator': { title: '예상 요금 계산기', back: 'page-home', nav: 'nav-calc' },
+    'page-settle-main': { title: '출차 및 정산', back: 'page-home', nav: 'nav-home' },
+    'page-settle-detail': { title: '요금 확인 및 결제', back: 'page-settle-main', nav: 'nav-home' },
+    'page-receipt': { title: '전자 영수증', back: null, nav: 'nav-home' },
+    'page-info': { title: '주차장 이용 안내', back: 'page-home', nav: 'nav-info' },
+    'page-admin': { title: '시스템 관리', back: 'page-home', nav: null },
+    'page-admin-tower-detail': { title: '타워별 관리', back: 'page-admin', nav: null }
+};
+let towerOverviewCache = [];
+let currentAdminTower = 'A';
+let currentSettlementData = null;
+let lastReceiptData = null;
+let lastStatusCode = '';
+let lastStatusData = null;
+let editingEntryCode = '';
+
+function escapeHtml(text) { return String(text ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;'); }
+function formatWon(value) { return '₩ ' + Number(value || 0).toLocaleString('ko-KR'); }
+function moneyText(value) { return Number(value || 0).toLocaleString('ko-KR') + '원'; }
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function carTypeNameById(id) { return ({1:'경차',2:'중형차',3:'SUV',4:'대형차',5:'전기차'})[String(id)] || ''; }
+function carTypeIdFromName(name) { const map = {'경차':'1','중형차':'2','SUV':'3','대형차':'4','전기차':'5'}; return map[name] || String(name || ''); }
+function towerKeyFromId(id) { return ({1:'A',2:'B',3:'C'})[String(id)] || String(id || ''); }
+function dateTimeValue(date, hour, min, sec = '00') {return `${date} ${hour.padStart(2,'0')}:${min.padStart(2,'0')}:${sec.padStart(2,'0')}`;}
+
+async function apiRequest(action, payload = {}) {
+    const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' }, body: new URLSearchParams({ action, ...payload }) });
+    const text = await response.text();
+    try { return JSON.parse(text); } catch { throw new Error('CGI 응답을 JSON으로 읽지 못했습니다. API 경로 또는 Apache CGI 설정을 확인하세요.'); }
+}
+
+function resetPageForms(pageId) {
+    const resetPages = ['page-reserve','page-entry','page-search','page-find-res','page-calculator','page-settle-main'];
+    if (!resetPages.includes(pageId)) return;
+    document.querySelectorAll(`#${pageId} form`).forEach(form => form.reset());
+    if (pageId === 'page-reserve') { document.getElementById('reserve-tower').innerHTML = '<option value="" disabled selected>차종을 먼저 선택하세요</option>'; document.getElementById('reserve-availability-note').textContent = ''; }
+    if (pageId === 'page-find-res') document.getElementById('result-find-res').innerHTML = '';
+    if (pageId === 'page-calculator') document.getElementById('result-calc').innerHTML = '';
+}
+
+function goToPage(pageId, options = {}) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const page = document.getElementById(pageId);
+    if (page) page.classList.add('active');
+    document.querySelectorAll('.content').forEach(c => c.scrollTop = 0);
+    if (!options.keepForm) resetPageForms(pageId);
+    const config = pageConfig[pageId];
+    if (config) {
+        document.getElementById('global-header-title').innerText = config.title;
+        const backBtn = document.getElementById('global-back-btn');
+        if (config.back) { backBtn.style.display = 'block'; backBtn.onclick = () => goToPage(config.back, { keepForm: true }); }
+        else backBtn.style.display = 'none';
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        if (config.nav) document.getElementById(config.nav)?.classList.add('active');
+    }
+    if (pageId === 'page-info') renderTowerOverview();
+    if (pageId === 'page-admin') renderAdminHome();
+    if (pageId === 'page-admin-tower-detail') renderAdminTowerDetail();
+    if (pageId === 'page-reserve') renderTowerOverview().then(refreshReserveTowerOptions).catch(()=>{});
+}
+
+function fillNumberSelect(id, max, suffix, selected = '00') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    for (let i=0;i<=max;i++) {
+        const v = String(i).padStart(2,'0');
+        const opt = document.createElement('option');
+        opt.value = v; opt.textContent = v + suffix;
+        if (v === selected) opt.selected = true;
+        el.appendChild(opt);
+    }
+}
+function setupTimeSelects() {
+    ['calc-entry-hour','calc-exit-hour','admin-entry-hour'].forEach(id => fillNumberSelect(id,23,'시'));
+    ['calc-entry-min','calc-exit-min','admin-entry-min'].forEach(id => fillNumberSelect(id,59,'분'));
+    ['calc-entry-sec','calc-exit-sec','admin-entry-sec'].forEach(id => fillNumberSelect(id,59,'초'));
+}
+
+function renderInfoRows(rows) {
+    return rows.map(([k,v,style='']) => `<div class="info-row"><span>${escapeHtml(k)}</span><strong style="${style}">${escapeHtml(v)}</strong></div>`).join('');
+}
+
+function setReservationComplete(data) {
+    document.getElementById('complete-code-big').textContent = data.reservationNo;
+    document.getElementById('complete-info').innerHTML = renderInfoRows([
+        ['예약번호', data.reservationNo], ['차량번호', data.carNumber], ['전화번호', data.phoneNumber], ['차종', data.carType], ['주차타워', data.parkingTower], ['운영시간', data.operatingHours || '24시간 운영'], ['예약시각', data.reserveTime], ['예약 제한시간', data.limitTime], ['예약보증금', data.deposit]
+    ]);
+}
+function setEntryComplete(data) {
+    document.getElementById('entry-complete-info').innerHTML = renderInfoRows([
+        ['예약번호', data.reservationNo], ['차량번호', data.carNumber], ['전화번호', data.phoneNumber], ['차종', data.carType], ['주차타워', data.parkingTower], ['입차시간', data.entryTime]
+    ]);
+}
+
+async function renderTowerOverview() {
+    const data = await apiRequest('tower_overview');
+    if (!data.success) throw new Error(data.message || '타워 현황을 불러오지 못했습니다.');
+    towerOverviewCache = data.towers || [];
+    towerOverviewCache.forEach(tower => {
+        const box = document.getElementById('tower-info-' + tower.key);
+        if (!box) return;
+        const rows = (tower.carTypes || []).map(item => {
+            const full = item.available <= 0;
+            return `<div class="info-row"><span>${escapeHtml(item.name)}</span><strong style="${full ? 'color:var(--danger-color)' : ''}">${item.used}/${item.capacity}대 <span class="muted">(입차 ${item.entered}, 예약 ${item.reserved})</span>${full ? ' · 만차' : ''}</strong></div>`;
+        }).join('');
+        box.innerHTML = `<div class="info-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div><h3 style="font-size:17px;">${escapeHtml(tower.name)}</h3><p class="muted">운영시간 ${escapeHtml(tower.operatingHours)}</p></div><span class="status-pill ${escapeHtml(tower.statusClass)}">${escapeHtml(tower.status)}</span></div><div class="info-row"><span>입차+예약 현황</span><strong>${tower.usedTotal}/${tower.capacity}대</strong></div><div class="info-row"><span>입차 / 예약</span><strong>${tower.enteredCount}대 / ${tower.reservedCount}건</strong></div><hr>${rows}<hr><p class="muted">요금: 기본 1시간 ${moneyText(data.baseFee)} / 추가 ${data.extraUnitMinutes}분당 ${moneyText(data.extraUnitFee)} · 1일 최대요금 없음</p></div>`;
+    });
+}
+function showTowerInfo(key, btn) {
+    document.querySelectorAll('.tower-tab').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.querySelectorAll('.tower-info-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tower-info-' + key)?.classList.add('active');
+}
+
+function buildTowerOptions(select, note, carTypeId, selectedTowerId) {
+    select.innerHTML = '<option value="" disabled selected>주차타워를 선택하세요</option>';
+    if (!carTypeId) { note.textContent = '차종을 선택하면 타워별 잔여 대수가 표시됩니다.'; return; }
+    let firstAvailable = '';
+    towerOverviewCache.forEach(tower => {
+        const ct = (tower.carTypes || []).find(x => String(x.id) === String(carTypeId));
+        if (!ct) return;
+        const opt = document.createElement('option');
+        opt.value = tower.id;
+        opt.disabled = ct.available <= 0;
+        opt.textContent = `${tower.key} Tower · ${carTypeNameById(carTypeId)} ${ct.available}/${ct.capacity}대 남음${ct.available <= 0 ? ' (만차)' : ''}`;
+        if (String(selectedTowerId || '') === String(tower.id)) opt.selected = true;
+        if (!firstAvailable && !opt.disabled) firstAvailable = String(tower.id);
+        select.appendChild(opt);
+    });
+    if (!select.value && firstAvailable) select.value = firstAvailable;
+    note.textContent = firstAvailable ? '만차인 타워는 선택할 수 없습니다.' : '현재 선택 차종으로 예약 가능한 타워가 없습니다.';
+}
+async function refreshReserveTowerOptions() {
+    if (!towerOverviewCache.length) await renderTowerOverview();
+    buildTowerOptions(document.getElementById('reserve-tower'), document.getElementById('reserve-availability-note'), document.getElementById('reserve-car-type').value, null);
+}
+async function refreshChangeTowerOptions() {
+    if (!towerOverviewCache.length) await renderTowerOverview();
+    buildTowerOptions(document.getElementById('change-tower'), document.getElementById('change-availability-note'), document.getElementById('change-car-type').value, document.getElementById('change-tower').value);
+}
+
+async function submitReserve(event) {
+    event.preventDefault();
+    const btn = event.target.querySelector('button[type="submit"]');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 예약 중...';
+    try {
+        const data = await apiRequest('reserve', { carNumber: document.getElementById('reserve-car-number').value.trim(), phoneNumber: document.getElementById('reserve-phone').value.trim(), carType: document.getElementById('reserve-car-type').value, towerId: document.getElementById('reserve-tower').value });
+        if (!data.success) throw new Error(data.message || '예약에 실패했습니다.');
+        setReservationComplete(data);
+        goToPage('page-reservation-complete');
+    } catch (err) { alert(err.message); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="far fa-calendar-check"></i> 예약 완료하기'; }
+}
+
+async function submitEntry(event) {
+    event.preventDefault();
+    const btn = event.target.querySelector('button[type="submit"]');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 입차 처리 중...';
+    try {
+        const data = await apiRequest('entry', { reservationNo: document.getElementById('entry-code').value.trim(), carNumber: document.getElementById('entry-car-number').value.trim() });
+        if (!data.success) throw new Error(data.message || '입차 처리에 실패했습니다.');
+        setEntryComplete(data);
+        goToPage('page-entry-complete');
+    } catch (err) { alert(err.message); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> 입차 처리'; }
+}
+
+function renderStatusResult(data) {
+    lastStatusData = data;
+    const area = document.getElementById('status-detail-area');
+    if (data.status === 'reserved') {
+        area.innerHTML = `<div class="result-box" style="border-color:#f59e0b;background:#fffbeb;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h3 style="color:#b45309;">예약 완료</h3><span class="status-pill normal">입차 대기중</span></div><div style="font-size:22px;font-weight:900;color:var(--danger-color);text-align:center;margin:12px 0;">입차 제한시간: ${escapeHtml(data.remainingText)}</div>${renderInfoRows([['예약번호', data.reservationNo],['차량번호', data.carNumber],['전화번호', data.phoneNumber],['차종', data.carType],['주차타워', data.parkingTower],['예약시각', data.reserveTime]])}<div class="button-row"><button class="btn-primary" onclick="goToChangeReservation()"><i class="fas fa-pen"></i> 예약 변경</button><button class="btn-danger" onclick="cancelCurrentReservation()"><i class="fas fa-trash"></i> 취소하기</button></div><button class="btn-outline" onclick="goToPage('page-entry')"><i class="fas fa-sign-in-alt"></i> 입차하러 가기</button><button class="btn-outline" onclick="goToPage('page-home')">홈으로 돌아가기</button></div>`;
+    } else if (data.status === 'entered') {
+        area.innerHTML = `<div class="result-box" style="border-color:var(--success-color);background:#ecfdf5;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h3 style="color:#047857;">입차 완료</h3><span class="status-pill good">주차 중</span></div>${renderInfoRows([['예약번호', data.reservationNo],['차량번호', data.carNumber],['전화번호', data.phoneNumber],['차종', data.carType],['현재 위치', data.parkingTower],['입차 시간', data.entryTime],['입차 경과시간', data.elapsedText],['현재 예상 요금', data.currentFeeText || moneyText(data.currentFee), 'color:var(--success-color);font-size:16px;']])}<div class="button-row"><button class="btn-primary" onclick="goSettleFromStatus()"><i class="fas fa-credit-card"></i> 정산하러 가기</button><button class="btn-outline" onclick="goToPage('page-home')">홈으로 돌아가기</button></div></div>`;
+    }
+}
+async function handleSearch(event) {
+    event.preventDefault();
+    const inputVal = document.getElementById('search-input').value.trim();
+    if (inputVal.toLowerCase() === 'admin') { goToPage('page-admin'); return; }
+    const btn = document.getElementById('btn-search-exec');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 조회 중...';
+    try {
+        const data = await apiRequest('status', { code: inputVal });
+        if (!data.success) throw new Error(data.message || '조회에 실패했습니다.');
+        lastStatusCode = inputVal;
+        renderStatusResult(data);
+        goToPage('page-reservation-detail', { keepForm: true });
+    } catch (err) { alert(err.message); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i> 조회하기'; }
+}
+async function refreshCurrentStatus() {
+    if (!lastStatusCode) { alert('조회할 예약번호가 없습니다.'); return; }
+    try { const data = await apiRequest('status', { code: lastStatusCode }); if (!data.success) throw new Error(data.message); renderStatusResult(data); }
+    catch (err) { alert(err.message); }
+}
+async function handleFindRes(event) {
+    event.preventDefault();
+    const btn = document.getElementById('btn-find-exec');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 찾는 중...';
+    try {
+        const data = await apiRequest('find', { carNumber: document.getElementById('find-car').value.trim(), phoneNumber: document.getElementById('find-phone').value.trim() });
+        if (!data.success) throw new Error(data.message || '예약번호 찾기에 실패했습니다.');
+        document.getElementById('result-find-res').innerHTML = `<div class="result-box"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h3>조회 완료</h3><span class="status-pill ${data.status === 'entered' ? 'good' : 'normal'}">${escapeHtml(data.statusText)}</span></div>${renderInfoRows([['예약번호', data.reservationNo], ['차량번호', data.carNumber], ['전화번호', data.phoneNumber], ['차종', data.carType], ['주차타워', data.parkingTower]])}<button class="btn-primary" style="margin-top:14px;" onclick="lastStatusCode='${escapeHtml(data.reservationNo)}'; renderStatusResult(lastStatusData || ${JSON.stringify({}).replaceAll('"','&quot;')}); refreshCurrentStatus(); goToPage('page-reservation-detail',{keepForm:true});">상세 조회로 이동</button></div>`;
+        lastStatusCode = data.reservationNo; lastStatusData = data;
+    } catch (err) { alert(err.message); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i> 예약번호 찾기'; }
+}
+function goToChangeReservation() {
+    if (!lastStatusData || lastStatusData.status !== 'reserved') return;
+    document.getElementById('change-code').value = lastStatusData.reservationNo;
+    document.getElementById('change-car-type').value = carTypeIdFromName(lastStatusData.carType);
+    document.getElementById('change-tower').value = lastStatusData.towerId || '';
+    renderTowerOverview().then(() => {
+        buildTowerOptions(document.getElementById('change-tower'), document.getElementById('change-availability-note'), document.getElementById('change-car-type').value, lastStatusData.towerId);
+        goToPage('page-reservation-change', { keepForm: true });
+    }).catch(err => alert(err.message));
+}
+async function submitReservationChange(event) {
+    event.preventDefault();
+    const btn = event.target.querySelector('button[type="submit"]');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 변경 중...';
+    try {
+        const data = await apiRequest('change_reservation', { code: document.getElementById('change-code').value, carType: document.getElementById('change-car-type').value, towerId: document.getElementById('change-tower').value });
+        if (!data.success) throw new Error(data.message || '예약 변경에 실패했습니다.');
+        alert('예약이 변경되었습니다.');
+        lastStatusCode = data.reservationNo;
+        const statusData = await apiRequest('status', { code: data.reservationNo });
+        renderStatusResult(statusData);
+        goToPage('page-reservation-detail', { keepForm: true });
+    } catch (err) { alert(err.message); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-pen"></i> 예약 변경 완료'; }
+}
+async function cancelCurrentReservation() {
+    if (!lastStatusData?.reservationNo) return;
+    if (!confirm('정말 예약을 취소하시겠습니까?')) return;
+    try {
+        const data = await apiRequest('cancel_reservation', { code: lastStatusData.reservationNo });
+        if (!data.success) throw new Error(data.message || '예약 취소에 실패했습니다.');
+        alert('예약이 취소되었습니다.');
+        lastStatusCode = ''; lastStatusData = null;
+        goToPage('page-home');
+    } catch (err) { alert(err.message); }
+}
+function goSettleFromStatus() {
+    goToPage('page-settle-main');
+    document.getElementById('settle-code').value = lastStatusData?.reservationNo || '';
+}
+
+async function handleCalculate(event) {
+    event.preventDefault();
+    const btn = document.getElementById('btn-calc-exec');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 계산 중...';
+    try {
+        const entry = dateTimeValue(document.getElementById('calc-entry-date').value.trim(), document.getElementById('calc-entry-hour').value, document.getElementById('calc-entry-min').value,'00');
+        const exit = dateTimeValue(document.getElementById('calc-exit-date').value.trim(), document.getElementById('calc-exit-hour').value, document.getElementById('calc-exit-min').value, '00');
+        const data = await apiRequest('fee_calc', { entryTime: entry, exitTime: exit });
+        if (!data.success) throw new Error(data.message || '요금 계산에 실패했습니다.');
+        document.getElementById('result-calc').innerHTML = `<div class="result-box"><p class="muted" style="text-align:center;">예상 총 주차요금</p><div class="calc-total">${escapeHtml(data.feeText)}</div>${renderInfoRows([['예상 주차 시간', data.durationText], ['요금 적용 시간', data.chargedText], ['기본 요금', moneyText(data.baseFee)], ['추가 요금', moneyText(data.extraFee)]])}<p class="muted" style="margin-top:14px;text-align:center;">실제 요금은 실제 입·출차 시간에 따라 달라질 수 있습니다.</p></div>`;
+    } catch (err) { alert(err.message); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-calculator"></i> 예상 요금 확인'; }
+}
+
+async function searchParkingFee(event) {
+    event.preventDefault();
+    const code = document.getElementById('settle-code').value.trim();
+    const btn = event.target.querySelector('button[type="submit"]');
+    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 요금 확인 중...';
+    try {
+        const data = await apiRequest('settle_preview', { code });
+        if (!data.success) throw new Error(data.message || '요금 확인에 실패했습니다.');
+        currentSettlementData = data;
+        document.getElementById('settle-detail-info').innerHTML = renderInfoRows([['예약번호', data.reservationNo], ['차량번호', data.carNumber], ['이용 시간', data.durationText], ['총 주차요금', data.parkingFeeText], ['예약 보증금 차감', '-' + data.depositUsedText, 'color:var(--danger-color);'], ['출차 시 결제 금액', data.finalFeeText, 'font-size:22px;color:var(--primary-color);']]);
+        goToPage('page-settle-detail', { keepForm: true });
+    } catch (err) { alert(err.message); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-credit-card"></i> 주차 요금 확인'; }
+}
+async function completePayment() {
+    if (!currentSettlementData?.reservationNo) { alert('먼저 예약번호로 요금을 확인해주세요.'); goToPage('page-settle-main'); return; }
+    try {
+        const data = await apiRequest('exit', { code: currentSettlementData.reservationNo, method: document.getElementById('pay-method').value });
+        if (!data.success) throw new Error(data.message || '결제 처리에 실패했습니다.');
+        lastReceiptData = data;
+        document.getElementById('receipt-info').innerHTML = renderInfoRows([['영수증 번호', data.receiptNo], ['예약번호', data.reservationNo], ['차량번호', data.carNumber], ['전화번호', data.phoneNumber], ['주차타워', data.parkingTower], ['이용 시간', data.durationText], ['주차요금', data.parkingFeeText], ['보증금 차감', '-' + data.depositUsedText], ['최종 결제 금액', data.finalFeeText, 'color:var(--primary-color);font-size:18px;'], ['결제 수단', data.method]]);
+        goToPage('page-receipt');
+    } catch (err) { alert(err.message); }
+}
+
+function openAdminTower(key) { currentAdminTower = key; goToPage('page-admin-tower-detail'); }
+async function renderAdminHome() {
+    const list = document.getElementById('admin-tower-list');
+    list.innerHTML = '<div class="admin-empty-row">관리자 데이터를 불러오는 중입니다.</div>';
+    try {
+        const data = await apiRequest('admin_summary');
+        if (!data.success) throw new Error(data.message || '관리자 데이터를 불러오지 못했습니다.');
+        document.getElementById('admin-total-entered').textContent = data.totalEntered + '대';
+        document.getElementById('admin-total-reserved').textContent = data.totalReserved + '건';
+        document.getElementById('admin-total-sales').textContent = formatWon(data.totalSales);
+        list.innerHTML = (data.towers || []).map(t => `<div class="admin-tower-card" onclick="openAdminTower('${escapeHtml(t.key)}')"><div class="admin-tower-head"><div class="admin-tower-title"><div class="admin-tower-icon"><i class="fas fa-warehouse"></i></div><div><h3>${escapeHtml(t.name)}</h3><p class="muted">입차+예약 ${t.usedTotal}/${t.capacity}대</p></div></div><span class="admin-status-pill ${escapeHtml(t.statusClass)}">${escapeHtml(t.status)}</span></div><div class="admin-card-stats"><div><span>입차</span><strong>${t.enteredCount}대</strong></div><div><span>예약</span><strong>${t.reservedCount}건</strong></div><div><span>매출</span><strong>${formatWon(t.sales)}</strong></div></div></div>`).join('');
+    } catch (err) { list.innerHTML = `<div class="admin-empty-row">${escapeHtml(err.message)}</div>`; }
+}
+async function renderAdminTowerDetail() {
+    try {
+        const data = await apiRequest('admin_tower', { tower: currentAdminTower });
+        if (!data.success) throw new Error(data.message || '타워 상세 데이터를 불러오지 못했습니다.');
+        const tower = data.tower;
+        document.getElementById('admin-detail-title').textContent = tower.name;
+        document.getElementById('admin-detail-subtitle').textContent = `${tower.status} 상태 · 입차+예약 ${tower.usedTotal}/${tower.capacity}대`;
+        document.getElementById('admin-detail-sales-label').textContent = `${tower.name} 매출`;
+        document.getElementById('admin-detail-sales').textContent = formatWon(tower.sales);
+        document.getElementById('admin-entered-count').textContent = `${data.entered.length}대 입차중`;
+        document.getElementById('admin-reserved-count').textContent = `${data.reserved.length}건 예약중`;
+        document.getElementById('admin-entered-list').innerHTML = data.entered.length ? data.entered.map(item => `<tr><td>${escapeHtml(item.reservationNo)}</td><td>${escapeHtml(item.carNumber)}</td><td>${escapeHtml(item.phoneNumber)}</td><td>${escapeHtml(item.carType)}</td><td>${escapeHtml(item.entryTime)}</td><td>${escapeHtml(item.elapsedText)}</td><td>${formatWon(item.currentFee)}</td><td><button class="admin-action-btn" onclick="openEntryTimeEditor('${escapeHtml(item.reservationNo)}','${escapeHtml(item.entryTime)}')">입차시간 수정</button></td></tr>`).join('') : '<tr><td colspan="8" class="admin-empty-row">현재 입차 중인 차량이 없습니다.</td></tr>';
+        document.getElementById('admin-reserved-list').innerHTML = data.reserved.length ? data.reserved.map(item => `<tr><td>${escapeHtml(item.reservationNo)}</td><td>${escapeHtml(item.carNumber)}</td><td>${escapeHtml(item.phoneNumber)}</td><td>${escapeHtml(item.carType)}</td><td>${escapeHtml(item.reserveTime)}</td><td>${escapeHtml(item.limitTime)}</td></tr>`).join('') : '<tr><td colspan="6" class="admin-empty-row">현재 예약 대기 차량이 없습니다.</td></tr>';
+    } catch (err) { alert(err.message); }
+}
+function openEntryTimeEditor(code, oldTime) {
+    editingEntryCode = code;
+    document.getElementById('entry-time-target').textContent = `${code} / 현재 입차시간: ${oldTime}`;
+    const m = String(oldTime || '').match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
+    if (m) {
+        document.getElementById('admin-entry-date').value = m[1];
+        fillNumberSelect('admin-entry-hour', 23, '시', m[2]);
+        fillNumberSelect('admin-entry-min', 59, '분', m[3]);
+        fillNumberSelect('admin-entry-sec', 59, '초', m[4]);
+    }
+    openModal('modal-entry-time');
+}
+async function submitEntryTimeEdit() {
+    const newEntryTime = dateTimeValue(document.getElementById('admin-entry-date').value.trim(), document.getElementById('admin-entry-hour').value, document.getElementById('admin-entry-min').value, document.getElementById('admin-entry-sec').value);
+    try {
+        const data = await apiRequest('update_entry_time', { code: editingEntryCode, newEntryTime });
+        if (!data.success) throw new Error(data.message || '입차시간 수정에 실패했습니다.');
+        closeModal('modal-entry-time');
+        alert('입차시간이 수정되었습니다.');
+        renderAdminTowerDetail();
+    } catch (err) { alert(err.message); }
+}
+
+window.onload = () => { setupTimeSelects(); goToPage('page-home'); renderTowerOverview().catch(()=>{}); };
+</script>
+</body>
+</html>
