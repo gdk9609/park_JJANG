@@ -1,8 +1,15 @@
+/*
+- 관리자 페이지에서 입차 중인 차량의 입차시간을 수정하는 함수
+- 예약번호로 차량을 조회한 뒤 새로운 입차시간으로 변경
+- 날짜 형식 검증, 미래 시간 여부 검사, 파일 저장
+*/
+
 #include <stdio.h>
 #include "parking.h"
 
 int api_update_entry_time(const char *reservation_code, const char *new_entry_time_text,
                           ParkingRecord *out, char *err, size_t err_size) {
+
     if (!reservation_code || !*reservation_code) {
         snprintf(err, err_size, "예약번호가 비어 있습니다.");
         return 0;
@@ -12,8 +19,10 @@ int api_update_entry_time(const char *reservation_code, const char *new_entry_ti
         return 0;
     }
 
-    ParkingRecord p;
-    int index;
+    ParkingRecord p; 
+    int index; 
+
+
     if (!find_parking_by_code(reservation_code, &p, &index)) {
         snprintf(err, err_size, "현재 입차 중인 차량에서 해당 예약번호를 찾을 수 없습니다.");
         return 0;
@@ -35,9 +44,6 @@ int api_update_entry_time(const char *reservation_code, const char *new_entry_ti
         return 0;
     }
 
-    char logbuf[256];
-    snprintf(logbuf, sizeof(logbuf), "웹 관리자 입차시간 수정 - 예약번호 %s, 차량번호 %s", p.reservation_code, p.car_number);
-    write_log_msg(logbuf);
     if (out) *out = p;
     return 1;
 }

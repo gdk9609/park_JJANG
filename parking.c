@@ -2,6 +2,7 @@
 #include <string.h>
 #include "parking.h"
 
+// 주차 데이터 파일에서 가장 큰 ID를 찾아 다음 주차 ID를 생성하는 함수
 int next_parking_id(void) {
     int count = count_records(PARKING_FILE, sizeof(ParkingRecord));
     int max_id = 0;
@@ -12,11 +13,14 @@ int next_parking_id(void) {
     return max_id + 1;
 }
 
+// 새로운 입차 차량 정보를 주차 데이터 파일에 추가하는 함수
 int append_parking_record(const ParkingRecord *parking) {
     if (!parking) return -1;
     return append_record(PARKING_FILE, parking, sizeof(ParkingRecord));
 }
 
+// 예약번호를 이용해 현재 입차 중인 차량 정보를 검색하는 함수
+// 차량 정보와 파일 내 위치(index)를 반환
 int find_parking_by_code(const char *code, ParkingRecord *parking, int *index_out) {
     int count = count_records(PARKING_FILE, sizeof(ParkingRecord));
     for (int i = 0; i < count; i++) {
@@ -32,10 +36,13 @@ int find_parking_by_code(const char *code, ParkingRecord *parking, int *index_ou
     return 0;
 }
 
+// 주차 데이터 파일에서 특정 index의 입차 기록을 삭제하는 함수
 int delete_parking_record(int index) {
     return delete_record_at(PARKING_FILE, index, sizeof(ParkingRecord));
 }
 
+// 예약 완료된 차량을 실제 입차 처리하는 API 함수
+// 예약번호 및 차량번호를 검증하고 입차 정보를 parking.dat에 저장한 뒤 예약 정보를 삭제
 int api_entry_car(const char *reservation_code, const char *car_number, ParkingRecord *out,
                   char *err, size_t err_size) {
     expire_old_reservations();
@@ -71,9 +78,6 @@ int api_entry_car(const char *reservation_code, const char *car_number, ParkingR
 
     time_t now = now_time();
     if (difftime(now, r.reserved_at) > RESERVATION_TIMEOUT_SECONDS) {
-        char logbuf[256];
-        snprintf(logbuf, sizeof(logbuf), "웹 입차 시도 중 예약 만료 삭제 - 예약번호 %s", r.code);
-        write_log_msg(logbuf);
         delete_record_at(RESERVATIONS_FILE, index, sizeof(Reservation));
         snprintf(err, err_size, "예약 후 20분이 지나 입차할 수 없습니다.");
         return 0;
@@ -110,14 +114,13 @@ int api_entry_car(const char *reservation_code, const char *car_number, ParkingR
         return 0;
     }
 
-    char logbuf[256];
-    snprintf(logbuf, sizeof(logbuf), "웹 입차 완료 및 예약목록 삭제 - 예약번호 %s, 차량번호 %s", p.reservation_code, p.car_number);
-    write_log_msg(logbuf);
-
     if (out) *out = p;
     return 1;
 }
 
+// 입차 기록을 기반으로 결제 정보를 생성하는 내부 함수
+// 실제 이용 시간과 요금 적용 시간을 계산하고 총 주차요금을 계산
+// 예약 보증금 차감 금액과 최종 결제 금액을 계산하여 Payment 구조체에 저장
 static void fill_payment_from_parking(const ParkingRecord *pking, const char *method, Payment *p) {
     time_t exit_time = now_time();
     int actual_minutes = seconds_to_minutes_ceil(pking->entry_time, exit_time);
@@ -144,6 +147,8 @@ static void fill_payment_from_parking(const ParkingRecord *pking, const char *me
     snprintf(p->method, sizeof(p->method), "%s", (method && *method) ? method : "카드");
 }
 
+// 현재 입차 중인 차량의 예상 출차 요금을 미리 계산하는 API 함수
+// 실제 출차 처리 없이 예상 결제 정보를 반환
 int api_preview_exit_fee(const char *reservation_code, Payment *out, char *err, size_t err_size) {
     expire_old_reservations();
     if (!reservation_code || !*reservation_code) {
@@ -159,6 +164,8 @@ int api_preview_exit_fee(const char *reservation_code, Payment *out, char *err, 
     return 1;
 }
 
+// 차량 출차 및 결제를 처리하는 API 함수
+// 결제 정보를 생성하고 영수증을 저장하고 입차 기록 삭제 및 주차타워 상태를 갱신
 int api_exit_car(const char *reservation_code, const char *method, Payment *out, char *err, size_t err_size) {
     expire_old_reservations();
     if (!reservation_code || !*reservation_code) {
@@ -187,15 +194,8 @@ int api_exit_car(const char *reservation_code, const char *method, Payment *out,
         snprintf(err, err_size, "입차 데이터 삭제에 실패했습니다. 영수증 데이터는 저장되었습니다.");
         return 0;
     }
-    if (delete_text_lines_matching(MESSAGES_FILE, pking.reservation_code, pking.car_number) < 0) {
-        write_log_msg("웹 예약번호 발송 기록 삭제 실패");
-    }
     decrease_tower_current(pking.tower_id, pking.car_type);
 
-    char logbuf[256];
-    snprintf(logbuf, sizeof(logbuf), "웹 출차 완료 - 예약번호 %s, 차량번호 %s, 주차요금 %d원, 추가결제 %d원, 영수증 %s",
-             pking.reservation_code, pking.car_number, p.parking_fee, p.final_fee, p.receipt_no);
-    write_log_msg(logbuf);
 
     if (out) *out = p;
     return 1;

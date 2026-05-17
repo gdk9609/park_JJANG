@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include "parking.h"
 
+// 차량 종류 enum 값을 문자열 형태의 차량 종류명으로 변환하는 함수
 const char *car_type_name(int type) {
     switch (type) {
         case CAR_COMPACT: return "경차";
@@ -14,6 +15,7 @@ const char *car_type_name(int type) {
     }
 }
 
+// 예약 상태 enum 값을 문자열 형태의 상태명으로 변환하는 함수
 const char *reservation_status_name(int status) {
     switch (status) {
         case RES_CANCELLED: return "취소됨";
@@ -25,6 +27,8 @@ const char *reservation_status_name(int status) {
     }
 }
 
+// 전화번호 문자열을 010-0000-0000 형식으로 변환 및 검증하는 함수
+// 숫자 외 문자를 제거한 뒤 휴대전화 형식인지 검사
 int format_phone_number(const char *input, char *out, size_t out_size) {
     char digits[16];
     int n = 0;
@@ -46,6 +50,8 @@ int format_phone_number(const char *input, char *out, size_t out_size) {
     return 1;
 }
 
+// UTF-8 문자열에서 한 글자를 읽어 유니코드 코드포인트로 변환하는 내부 함수
+// 읽은 문자 길이(byte 수)도 함께 반환
 static int decode_utf8_one(const char *s, unsigned int *codepoint, int *consumed) {
     unsigned char c0 = (unsigned char)s[0];
     if (c0 < 0x80) return 0;
@@ -77,10 +83,13 @@ static int decode_utf8_one(const char *s, unsigned int *codepoint, int *consumed
     return 0;
 }
 
+// 유니코드 코드포인트가 제대로 된 한글인지 확인하는 함수
 static int is_hangul_syllable_codepoint(unsigned int cp) {
     return cp >= 0xAC00 && cp <= 0xD7A3;
 }
 
+// 차량번호 형식이 올바른지 검증하는 함수
+// 앞자리 숫자(2~3자리), 한글 1자, 뒤 숫자 4자리 형식인지 검사
 int validate_car_number(const char *input) {
     if (!input) return 0;
     size_t len = strlen(input);
