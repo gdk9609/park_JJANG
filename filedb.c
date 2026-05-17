@@ -30,16 +30,18 @@ static int ensure_file_exists(const char *path) {
 }
 
 // 레코드 파일의 크기가 구조체 크기의 배수가 아니면 손상된 파일로 판단하고 초기화하는 함수
-static int truncate_if_broken_record_file(const char *path, size_t size) {
+static int truncate_if_broken_record_file(const char *path, size_t size)
+{
     struct stat st;
     if (stat(path, &st) < 0) return 0;
     if (size == 0) return 0;
+
     if (st.st_size > 0 && st.st_size % (off_t)size != 0) {
         int fd = open(path, O_WRONLY | O_TRUNC);
         if (fd < 0) return -1;
         close(fd);
-    return 0;
     }
+    return 0;
 }
 
 // 주차 시스템 실행에 필요한 데이터 폴더와 파일들을 준비하는 함수
