@@ -254,7 +254,6 @@
             <div class="admin-summary-grid"><div class="admin-mini-stat"><span>전체 입차</span><strong id="admin-total-entered">0대</strong></div><div class="admin-mini-stat"><span>전체 예약</span><strong id="admin-total-reserved">0건</strong></div><div class="admin-mini-stat"><span>관리 타워</span><strong>3개</strong></div></div>
             <div id="admin-tower-list"></div>
             <div class="section-title">전체 매출 통계</div><div class="admin-total-sales-box"><p>A/B/C Tower 매출 합계</p><strong id="admin-total-sales">₩ 0</strong></div>
-            <button class="btn-outline" onclick="openModal('modal-log')"><i class="fas fa-terminal"></i> 시스템 로그 확인</button>
         </div></div>
 
         <div id="page-admin-tower-detail" class="page"><div class="content">
@@ -268,9 +267,6 @@
     </div>
 
     <div class="bottom-nav" id="global-bottom-nav"><div class="nav-item active" id="nav-home" onclick="goToPage('page-home')"><i class="fas fa-home"></i>홈</div><div class="nav-item" id="nav-search" onclick="goToPage('page-search')"><i class="fas fa-search"></i>조회</div><div class="nav-item" id="nav-calc" onclick="goToPage('page-calculator')"><i class="fas fa-calculator"></i>계산기</div><div class="nav-item" id="nav-info" onclick="goToPage('page-info')"><i class="fas fa-info-circle"></i>안내</div></div>
-
-    <div class="modal-overlay" id="modal-log"><div class="modal-content" style="background:#111827;color:#22c55e;font-family:monospace;font-size:11px;"><i class="fas fa-times modal-close" style="color:#fff" onclick="closeModal('modal-log')"></i><h3 style="color:#fff;margin-bottom:12px;">system_log.txt</h3><div style="line-height:1.6;">실제 로그는 서버의 data/log.txt에 저장됩니다.<br>Apache CGI 환경에서는 서버 파일에서 확인하세요.</div></div></div>
-
     <div class="modal-overlay" id="modal-entry-time"><div class="modal-content"><i class="fas fa-times modal-close" onclick="closeModal('modal-entry-time')"></i><h3 style="margin-bottom:14px;">입차시간 수정</h3><p class="muted" id="entry-time-target" style="margin-bottom:14px;"></p><div class="input-group"><label>날짜</label><input id="admin-entry-date" class="input-field" placeholder="yyyy-mm-dd" pattern="\d{4}-\d{2}-\d{2}"></div><div class="time-grid"><select id="admin-entry-hour" class="input-field small-select"></select><select id="admin-entry-min" class="input-field small-select"></select><select id="admin-entry-sec" class="input-field small-select"></select></div><button class="btn-primary" style="margin-top:16px;" onclick="submitEntryTimeEdit()"><i class="fas fa-check"></i> 수정 완료</button></div></div>
 </div>
 

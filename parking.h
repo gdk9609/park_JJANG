@@ -9,7 +9,6 @@
 #define RESERVATIONS_FILE "data/reservations.dat"
 #define PARKING_FILE "data/parking.dat"
 #define PAYMENTS_FILE "data/receipt_records.dat"
-#define LOG_FILE "data/log.txt"
 #define MESSAGES_FILE "data/messages.txt"
 #define RECEIPTS_FILE "data/receipts.txt"
 #define SALES_REPORT_FILE "data/sales_report.csv"
@@ -134,7 +133,6 @@ int count_records(const char *path, size_t size);
 int append_text_line(const char *path, const char *line);
 int delete_text_lines_matching(const char *path, const char *keyword1, const char *keyword2);
 
-void write_log_msg(const char *action);
 
 int init_default_towers(void);
 int get_tower_by_id(int tower_id, ParkingTower *tower, int *index_out);

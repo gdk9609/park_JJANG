@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -std=c11 -D_GNU_SOURCE
 TARGET=parking_server
-SRCS=server.c admin.c tower.c reservation.c parking.c fee.c payment.c filedb.c log.c utils.c time_utils.c
+SRCS=server.c admin.c tower.c reservation.c parking.c fee.c payment.c filedb.c utils.c time_utils.c
 OBJS=$(SRCS:.c=.o)
 LDFLAGS=-pthread
 
