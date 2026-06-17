@@ -1,213 +1,245 @@
-# Linux-Based Unmanned Parking Reservation and Management System
+<a name="readme-top"></a>
 
-이 프로젝트는 C 언어와 POSIX-level API를 기반으로 구현한 리눅스 기반 무인 주차 예약 및 관리 시스템이다. 사용자는 웹 브라우저를 통해 주차 예약, 입차 처리, 예약 조회, 예약 변경 및 취소, 출차 정산을 수행할 수 있다. 서버는 별도의 웹 프레임워크를 사용하지 않고 TCP 소켓 기반 HTTP 서버로 동작한다.
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
+  <a href="https://github.com/gdk9609/park_JJANG">
+    <img src="logo.png" alt="Logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2830/2830312.png'">
+  </a>
 
-## 주요 기능
+  <h3 align="center">리눅스 기반 무인 주차 예약 및 관리 시스템</h3>
 
-### 주차 예약
+  <p align="center">
+    C 언어와 POSIX API로 직접 구현한 TCP 소켓 기반 무인 주차장 웹 서버 프로젝트
+    <br />
+    <br />
+    <a href="https://github.com/gdk9609/park_JJANG"><strong>코드 확인하기 »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/gdk9609/park_JJANG/issues">버그 리포트</a>
+    ·
+    <a href="https://github.com/gdk9609/park_JJANG/issues">기능 요청</a>
+  </p>
+</div>
 
-차량번호, 전화번호, 차종, 주차타워 정보를 입력하면 주차 예약이 생성된다. 예약이 완료되면 5자리 랜덤 예약번호가 발급된다. 예약 시 보증금 2,000원이 적용되며, 예약 후 20분 이내 입차하지 않으면 예약은 자동으로 만료된다.
+<!-- BADGES -->
+<div align="center">
+  <img src="https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white" alt="C" />
+  <img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux" />
+  <img src="https://img.shields.io/badge/POSIX_API-4B32C3?style=for-the-badge&logo=gnu&logoColor=white" alt="POSIX" />
+  <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5" />
+</div>
+<br />
 
-### 입차 처리
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>📖 목차 (Table of Contents)</summary>
+  <ol>
+    <li><a href="#-프로젝트-소개-about-the-project">프로젝트 소개</a></li>
+    <li><a href="#-주요-기능-features">주요 기능</a></li>
+    <li>
+      <a href="#-시작하기-getting-started">시작하기 (Getting Started)</a>
+      <ul>
+        <li><a href="#실행-환경">실행 환경</a></li>
+        <li><a href="#빌드-및-실행">빌드 및 실행</a></li>
+      </ul>
+    </li>
+    <li><a href="#-시스템-데이터-구조">시스템 데이터 구조</a></li>
+    <li><a href="#-주차타워-및-요금-정책">주차타워 및 요금 정책</a></li>
+    <li><a href="#-api-명세">API 명세</a></li>
+  </ol>
+</details>
 
-입차 처리는 예약번호와 차량번호를 기준으로 이루어진다. 입력된 정보가 기존 예약 정보와 일치하면 예약 데이터는 입차 데이터로 이동한다. 입차가 완료되면 해당 주차타워의 현재 주차 대수가 자동으로 갱신된다.
+<br />
 
-### 예약 조회 및 변경
+## 🌟 프로젝트 소개 (About The Project)
 
-예약번호를 이용해 현재 예약 상태 또는 입차 상태를 조회할 수 있다. 차량번호와 전화번호를 이용해 예약번호를 찾을 수 있다. 예약 상태에서는 차종과 주차타워를 변경할 수 있으며, 필요에 따라 예약을 취소할 수 있다.
+<div align="center">
+  <img width="430" alt="메인 화면" src="https://github.com/user-attachments/assets/f6307a23-e433-49f6-ac03-3aa41c5a9cbe" />
+</div>
+<br/>
 
-### 출차 및 정산
+이 프로젝트는 **C 언어와 POSIX-level API를 기반으로 구현한 리눅스 환경의 무인 주차 예약 및 관리 시스템**입니다. 
+가장 큰 특징은 Nginx나 Apache 같은 별도의 웹 프레임워크를 사용하지 않고, **TCP 소켓 기반의 HTTP 서버를 직접 구현**하여 클라이언트의 요청을 처리한다는 점입니다. 
 
-출차 정산은 입차 시간을 기준으로 주차 시간을 계산하여 이루어진다. 기본 요금은 1시간 2,000원이며, 추가 요금은 10분당 300원으로 계산된다. 최종 결제 금액은 총 주차요금에서 예약 보증금을 차감한 금액이다. 결제가 완료되면 영수증 번호가 생성되고 결제 기록이 저장된다.
+사용자는 웹 브라우저를 통해 주차 예약부터 입차, 출차, 정산까지 직관적으로 수행할 수 있습니다.
 
-### 관리자 기능
+<p align="right">(<a href="#readme-top">위로 가기</a>)</p>
 
-관리자 기능은 전체 입차 차량 수, 예약 수, 매출 정보를 조회하는 기능을 제공한다. 또한 A Tower, B Tower, C Tower별 입차 및 예약 현황을 확인할 수 있다. 관리자는 입차 중인 차량의 입차 시간을 수정할 수 있다.
+---
 
-### 파일 기반 데이터 저장
+## ✨ 주요 기능 (Features)
 
-이 시스템은 파일 기반 데이터 저장 방식을 사용한다. 예약, 입차, 결제, 타워 정보는 `.dat` 파일에 구조체 단위로 저장된다. 메시지와 영수증 로그는 `.txt` 파일에 저장된다. 파일 잠금 기능을 사용하여 여러 요청이 동시에 발생할 때 데이터 충돌을 방지한다.
+* 📅 **주차 예약:** 차량/전화번호, 차종, 타워를 입력하여 예약 (20분 내 미입차 시 자동 만료)
+* 🚗 **입/출차 처리:** 예약번호와 차량번호를 매칭하여 입차 및 주차 대수 자동 갱신
+* 🔍 **예약 조회 및 변경:** 차량/전화번호로 예약 조회 및 차종/타워 변경 지원
+* 💳 **출차 및 정산:** 입차 시간을 기준으로 주차 시간을 계산하여 요금 정산 및 영수증(로그) 발급
+* 👨‍💼 **관리자 기능:** 전체 주차장 현황 조회 및 입차 중인 차량의 입차 시간 강제 수정 기능
+* 💾 **파일 기반 동시성 DB:** `.dat` 및 `.txt` 파일을 활용한 데이터베이스 구축 및 파일 잠금(Lock) 기능으로 동시성 문제 해결
 
-## 실행 환경
+<p align="right">(<a href="#readme-top">위로 가기</a>)</p>
 
-이 프로젝트는 Linux 또는 WSL 환경에서 실행된다. 빌드에는 GCC와 Make가 사용된다. 클라이언트 요청 처리를 위해 POSIX thread 라이브러리를 사용하며, 웹 UI는 일반 웹 브라우저에서 접근할 수 있다.
+---
 
-## 빌드 방법
+## 🚀 시작하기 (Getting Started)
 
-프로젝트 루트 디렉토리에서 `make` 명령어를 사용해 프로젝트를 빌드한다.
+### 실행 환경
+* **OS:** Linux 또는 WSL (Windows Subsystem for Linux)
+* **Compiler:** GCC
+* **Build Tool:** Make
+* **Concurrency:** POSIX thread (`pthread`)
 
-```bash
-make
-```
+### 빌드 및 실행
 
-빌드가 완료되면 `parking_server` 실행 파일이 생성된다.
+1. **레포지토리 클론**
+   ```sh
+   git clone https://github.com/gdk9609/park_JJANG.git
+   cd park_JJANG
+   ```
 
-## 실행 방법
+2. **프로젝트 빌드**
+   ```sh
+   make
+   ```
 
-서버의 기본 포트는 `8080`이다.
+3. **서버 실행 (기본 포트: 8080)**
+   ```sh
+   ./parking_server
+   ```
+   *포트 번호를 지정하고 싶다면 `./parking_server 9090` 과 같이 실행하세요.*
 
-```bash
-./parking_server
-```
+4. **웹 브라우저 접속**
+   * 접속 주소: `http://localhost:8080` (포트를 변경했다면 해당 포트 번호 입력)
+   * 서버 종료는 터미널에서 `Ctrl + C`를 입력합니다.
 
-서버 실행 후 웹 브라우저에서 다음 주소로 접속한다.
+5. **데이터 초기화 (선택)**
+   ```sh
+   make reset-data
+   ```
+   *기존 저장된 데이터를 지우고 싶을 때 사용합니다. `data` 디렉토리를 초기화하고 재생성합니다.*
+
+<p align="right">(<a href="#readme-top">위로 가기</a>)</p>
+
+---
+
+## 📂 시스템 데이터 구조
+
+<details>
+<summary><b>프로젝트 디렉토리 트리 보기 (클릭하여 펼치기)</b></summary>
 
 ```text
-http://localhost:8080
-```
-
-포트를 직접 지정하는 경우 실행 시 포트 번호를 인자로 전달한다.
-
-```bash
-./parking_server 9090
-```
-
-이 경우 접속 주소는 다음과 같다.
-
-```text
-http://localhost:9090
-```
-
-서버는 터미널에서 `Ctrl + C`를 입력하면 종료된다.
-
-## 데이터 초기화
-
-저장된 데이터를 초기화할 때는 `make reset-data` 명령어를 사용한다.
-
-```bash
-make reset-data
-```
-
-이 명령은 `data` 디렉토리를 삭제한 뒤 다시 생성한다. 이후 서버를 실행하면 필요한 데이터 파일과 기본 타워 데이터가 다시 생성된다.
-
-## 프로젝트 구조
-
-```text
-park_JJANG-Final/
+park_JJANG/
 ├── Makefile
-├── server.c            # TCP socket 기반 HTTP 서버 및 API 라우팅
-├── parking.h           # 공통 상수, 구조체, 함수 선언
-├── reservation.c       # 예약 생성, 조회, 변경, 취소, 만료 처리
-├── parking.c           # 입차, 출차, 주차 기록 관리
-├── payment.c           # 결제 기록, 영수증, 매출 계산
-├── fee.c               # 주차 요금 계산
-├── tower.c             # 주차타워 정보 및 잔여 대수 관리
-├── admin.c             # 관리자 입차시간 수정 기능
-├── filedb.c            # 파일 기반 데이터베이스 처리
-├── utils.c             # 차량번호, 전화번호, 문자열 검증 유틸리티
-├── time_utils.c        # 시간 변환 및 주차 시간 계산 유틸리티
-├── index.html          # 웹 UI
-├── logo.png            # 웹 UI 로고 이미지
-└── data/
-    ├── towers.dat
-    ├── reservations.dat
-    ├── parking.dat
-    ├── receipt_records.dat
-    ├── messages.txt
-    ├── receipts.txt
-    ├── sales_report.csv
-    └── data.lock
+├── server.c         # TCP socket 기반 HTTP 서버 및 API 라우팅
+├── parking.h        # 공통 상수, 구조체, 함수 선언
+├── reservation.c    # 예약 생성, 조회, 변경, 취소, 만료 처리
+├── parking.c        # 입차, 출차, 주차 기록 관리
+├── payment.c        # 결제 기록, 영수증, 매출 계산
+├── fee.c            # 주차 요금 계산
+├── tower.c          # 주차타워 정보 및 잔여 대수 관리
+├── admin.c          # 관리자 기능 (입차시간 수정 등)
+├── filedb.c         # 파일 기반 데이터베이스 처리
+├── utils.c          # 데이터 검증 유틸리티 (차량번호, 전화번호 등)
+├── time_utils.c     # 시간 변환 및 주차 시간 계산
+├── index.html       # 클라이언트 웹 UI
+├── logo.png         # 웹 UI 로고 이미지
+└── data/            # (파일 기반 DB 폴더)
+    ├── towers.dat / reservations.dat / parking.dat / receipt_records.dat
+    ├── messages.txt / receipts.txt / sales_report.csv
+    └── data.lock    # 동시성 접근 방지를 위한 잠금 파일
 ```
+</details>
 
-## 데이터 파일 설명
+### 데이터 파일 명세
 
-| 파일 | 설명 |
-|---|---|
-| `data/towers.dat` | A/B/C Tower의 수용량, 차종별 가능 대수, 현재 주차 대수를 저장한다. |
-| `data/reservations.dat` | 아직 입차하지 않은 예약 정보를 저장한다. |
-| `data/parking.dat` | 현재 입차 중인 차량 정보를 저장한다. |
-| `data/receipt_records.dat` | 결제 완료된 영수증 구조체 데이터를 저장한다. |
-| `data/messages.txt` | 예약 완료 시 발송되는 메시지 기록을 저장한다. |
-| `data/receipts.txt` | 결제 완료 영수증 텍스트 기록을 저장한다. |
-| `data/sales_report.csv` | 매출 보고서용 CSV 데이터를 저장한다. |
-| `data/data.lock` | 데이터 파일 동시 접근 방지를 위한 잠금 파일이다. |
+| 파일명 | 설명 |
+| --- | --- |
+| `towers.dat` | 타워별 수용량, 차종별 가능 대수, 현재 주차 대수 |
+| `reservations.dat` | 입차 대기 중인 예약 정보 구조체 |
+| `parking.dat` | 현재 입차 중인 차량 정보 구조체 |
+| `receipt_records.dat` | 결제 완료된 영수증 구조체 데이터 |
+| `messages.txt` | 예약 완료 발송 메시지 기록 로그 |
+| `receipts.txt` | 결제 완료 영수증 텍스트 기록 |
+| `sales_report.csv` | 매출 통계 보고서용 데이터 |
+| `data.lock` | 동시 접근 방지를 위한 뮤텍스(Mutex) 역할의 파일 |
 
-## 주차타워 기본 정보
+<p align="right">(<a href="#readme-top">위로 가기</a>)</p>
 
-최초 실행 시 기본적으로 3개의 주차타워가 생성된다.
+---
 
-| 타워 | 총 수용량 | 경차 | 중형차 | SUV | 대형차 | 전기차 |
-|---|---:|---:|---:|---:|---:|---:|
-| A Tower | 30 | 6 | 10 | 6 | 4 | 4 |
-| B Tower | 40 | 8 | 14 | 8 | 5 | 5 |
-| C Tower | 50 | 10 | 18 | 10 | 6 | 6 |
+## 🏢 주차타워 및 요금 정책
 
-## 요금 정책
+### 주차타워 기본 수용량
+| 타워명 | 총 수용량 | 경차 | 중형차 | SUV | 대형차 | 전기차 |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **A Tower** | 30 | 6 | 10 | 6 | 4 | 4 |
+| **B Tower** | 40 | 8 | 14 | 8 | 5 | 5 |
+| **C Tower** | 50 | 10 | 18 | 10 | 6 | 6 |
 
-| 항목 | 금액 |
-|---|---:|
-| 예약 보증금 | 2,000원 |
-| 기본 요금 | 1시간 2,000원 |
-| 추가 요금 | 10분당 300원 |
-| 일 최대 요금 | 적용하지 않음 |
+### 요금 정책
+| 항목 | 금액 | 비고 |
+| --- | --- | --- |
+| **예약 보증금** | 2,000원 | 최종 정산 시 차감 |
+| **기본 요금** | 2,000원 | 최초 1시간 적용 |
+| **추가 요금** | 300원 / 10분 | 기본 요금 초과 시 부과 |
 
-정산 시 총 주차요금에서 예약 보증금이 차감된다. 최종 결제 금액은 `총 주차요금 - 예약 보증금`으로 계산된다.
+<p align="right">(<a href="#readme-top">위로 가기</a>)</p>
 
-## API 개요
+---
 
-서버는 `/api`, `/parking_api.cgi`, `/cgi-bin/parking_api.cgi` 경로를 지원한다. 요청 방식은 `GET`과 `POST`를 모두 지원한다. 각 기능은 `action` 파라미터 값에 따라 실행된다.
+## 🔌 API 명세
 
-| Action | 기능 | 주요 파라미터 |
-|---|---|---|
-| `reserve` | 예약 생성 | `carNumber`, `phoneNumber`, `carType`, `towerId` |
-| `entry` | 입차 처리 | `reservationNo` 또는 `code`, `carNumber` |
-| `status` | 예약번호로 상태 조회 | `reservationNo` 또는 `code` |
-| `find` | 차량번호/전화번호로 예약 조회 | `carNumber`, `phoneNumber` |
-| `settle_preview` | 출차 전 예상 정산 금액 조회 | `reservationNo` 또는 `code` |
-| `exit` | 출차 및 결제 완료 | `reservationNo` 또는 `code`, `method` |
-| `fee_calc` | 입차/출차 시간 기준 예상 요금 계산 | `entryTime`, `exitTime` |
-| `tower_overview` | 전체 타워 현황 조회 | 없음 |
-| `admin_summary` | 관리자 전체 요약 조회 | 없음 |
-| `admin_tower` | 특정 타워 상세 조회 | `towerId` 또는 `tower` |
-| `update_entry_time` | 입차시간 수정 | `reservationNo` 또는 `code`, `newEntryTime` |
-| `cancel_reservation` | 예약 취소 | `reservationNo` 또는 `code` |
-| `change_reservation` | 예약 차종/타워 변경 | `reservationNo` 또는 `code`, `carType`, `towerId` |
+HTTP `GET` 및 `POST` 요청을 통해 서버와 통신합니다.
 
-## API 요청 예시
+| Action | 기능 설명 | 필수 파라미터 |
+| :--- | :--- | :--- |
+| `reserve` | 신규 주차 예약 | `carNumber`, `phoneNumber`, `carType`, `towerId` |
+| `find` | 내 예약 번호 찾기 | `carNumber`, `phoneNumber` |
+| `status` | 예약/주차 상태 조회 | `reservationNo` |
+| `change` | 예약 정보 변경 | `reservationNo`, `carType`, `towerId` |
+| `cancel` | 주차 예약 취소 | `reservationNo` |
+| `entry` | 예약 차량 입차 처리 | `reservationNo`, `carNumber` |
+| `exit` | 차량 출차 및 요금 조회 | `carNumber` |
+| `pay` | 요금 정산 및 결제 처리 | `carNumber`, `amount` |
+| `admin` | 관리자 주차장 현황 조회 | 관리자 권한 |
 
-타워 현황은 다음 요청으로 조회된다.
+<p align="right">(<a href="#readme-top">위로 가기</a>)</p>
 
-```bash
-curl "http://localhost:8080/api?action=tower_overview"
-```
+---
 
-예상 요금은 다음 요청으로 계산된다.
+## 🛠 사용한 주요 POSIX-level API
 
-```bash
-curl -X POST "http://localhost:8080/api" \
-  -d "action=fee_calc&entryTime=2026-05-08 13:30:00&exitTime=2026-05-08 15:10:00"
-```
+본 프로젝트는 운영체제 수준의 API를 직접 호출하여 서버를 구축하고 데이터를 관리합니다.
 
-출차 전 정산 금액은 다음 요청으로 조회된다.
+### 1. Network & Socket API
+* `socket()`: 클라이언트의 요청을 받을 TCP 소켓 생성
+* `bind()`: 소켓에 IP 주소와 포트 번호(기본 8080) 할당
+* `listen()`: 클라이언트의 접속 대기 상태 설정
+* `accept()`: 클라이언트 연결 요청 수락 및 통신용 새 소켓 반환
+* `recv()` / `send()`: HTTP Request 메시지 수신 및 HTTP Response 데이터 송신
 
-```bash
-curl -X POST "http://localhost:8080/api" \
-  -d "action=settle_preview&code=예약번호"
-```
+### 2. Thread API (Multi-threading)
+* `pthread_create()`: 클라이언트 접속 시마다 새로운 스레드를 생성하여 요청 병렬 처리
+* `pthread_detach()`: 종료된 스레드의 자원을 운영체제가 자동으로 회수하도록 설정
 
-## 사용한 주요 POSIX-level API
+### 3. File I/O & IPC API
+* `open()`, `read()`, `write()`, `close()`: `.dat` 및 `.txt` 파일을 열고 데이터를 읽고 쓰는 저수준 파일 입출력 제어
+* `flock()`: 데이터 파일에 대한 동시성 제어를 위해 파일 잠금(File Lock) 적용
 
-| 분류 | 사용 API | 적용 내용 |
-|---|---|---|
-| File I/O & Data Persistence | `open`, `read`, `write`, `close`, `lseek`, `stat`, `fstat`, `mkdir` | 예약, 입차, 결제, 영수증 데이터를 파일로 저장하고 조회한다. |
-| File Update & Management | `rename`, `unlink`, `flock` | 임시 파일 기반 레코드 삭제와 파일 잠금을 통한 동시 접근 방지를 구현한다. |
-| Socket Programming | `socket`, `bind`, `listen`, `accept`, `send`, `recv`, `setsockopt` | TCP 기반 HTTP 서버를 구현한다. |
-| Execution Environment Handling | `readlink`, `chdir` | 실행 파일 위치를 기준으로 정적 파일과 데이터 파일을 탐색한다. |
+<p align="right">(<a href="#readme-top">위로 가기</a>)</p>
 
-## 동시성 처리
+---
 
-이 프로젝트는 클라이언트 요청마다 별도의 스레드를 생성하는 방식으로 동작한다. `pthread_create()`는 클라이언트별 스레드를 생성하는 데 사용된다. `pthread_detach()`는 종료된 스레드의 자원을 자동으로 회수하는 데 사용된다. `pthread_mutex_lock()`과 `pthread_mutex_unlock()`은 프로세스 내부 데이터 처리를 보호하는 데 사용된다. `flock()`은 데이터 파일 접근을 보호하여 동시 쓰기 충돌을 방지한다.
+## 🔄 동시성 처리 (Concurrency Handling)
 
-## 웹 UI 사용 흐름
+웹 서버 특성상 여러 사용자가 동시에 예약이나 입차를 시도할 수 있습니다. 이를 해결하기 위해 두 가지 계층에서 동시성 제어를 구현했습니다.
 
-사용자는 메인 화면에 접속한 뒤 `주차장 이용` 메뉴에서 차량을 예약한다. 예약이 완료되면 예약번호가 발급되며, 사용자는 해당 예약번호로 20분 이내 입차 처리를 진행한다. `조회 및 변경` 메뉴에서는 예약 상태 또는 입차 상태를 확인할 수 있다. 예약 상태에서는 예약 변경 또는 취소가 가능하다. 출차 시에는 `출차 및 정산` 메뉴에서 요금을 확인하고 결제를 완료한다. 결제가 완료되면 영수증 정보가 제공된다.
+1. **멀티 스레딩 (Multi-threading)**
+   * 클라이언트의 연결 요청(`accept`)이 들어올 때마다 메인 프로세스가 `pthread_create()`를 통해 **새로운 워커 스레드(Worker Thread)**를 생성합니다.
+   * 각 스레드는 독립적으로 클라이언트의 HTTP 요청을 분석하고 응답하므로, 여러 사용자의 동시 접속을 지연 없이 처리합니다.
 
-관리자 화면은 예약번호 조회 입력칸에 `admin`을 입력하면 접근할 수 있다.
+2. **파일 잠금 (File Locking) - 임계 구역 보호**
+   * 여러 스레드가 동시에 `reservations.dat`(예약 정보)나 `towers.dat`(주차장 현황) 파일을 수정하려고 할 때 발생하는 **경쟁 상태(Race Condition)**를 방지합니다.
+   * 데이터를 읽거나 쓸 때 `flock(fd, LOCK_EX)`를 호출하여 **독점적 락(Exclusive Lock)**을 걸어, 한 번에 하나의 스레드만 파일에 접근하도록 임계 구역(Critical Section)을 보호합니다. 작업이 끝나면 `flock(fd, LOCK_UN)`으로 락을 해제합니다.
 
-## 컴파일 정리
-
-빌드 결과물과 오브젝트 파일은 `make clean` 명령어로 삭제된다.
-
-```bash
-make clean
-```
+<p align="right">(<a href="#readme-top">위로 가기</a>)</p>
